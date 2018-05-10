@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "Firewall"
+    },
+    "adminUsername": {
+      "value": "ben"
+    },
+    "adminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/fd77ecf8-6e4e-4526-a16c-41532d5fe8c1/resourceGroups/benlabrg798209/providers/Microsoft.KeyVault/vaults/BenLab2483"
+        },
+        "secretName": "benserveradmin"
+      }
+    } }
+  }

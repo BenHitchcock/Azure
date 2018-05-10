@@ -1,0 +1,185 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "North Europe",
+      "metadata": {
+        "description": "Please enter the location where you want to deploy this VM"
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the VM"
+      }
+    },
+        "adminUsername": {
+          "type": "string",
+          "metadata": {
+            "description": "Username for the Virtual Machine."
+          }
+        },
+        "adminPassword": {
+          "type": "securestring",
+          "metadata": {
+            "description": "Password for the Virtual Machine."
+          }
+        },
+    "OSVersion": {
+      "type": "string",
+      "defaultValue": "14.04.0-LTS",
+      "allowedValues": [
+        "14.04.0-LTS"
+      ],
+      "metadata": {
+        "description": "The  version for the VM. This will pick a fully patched image of this given Windows version."
+      }
+    },
+    "existingVirtualNetworkName": {
+      "type": "string",
+      "defaultValue": "UK-VN-HUB-001",
+      "metadata": {
+        "description": "Name of the existing VNET"
+      }
+    },
+    "existingVirtualNetworkResourceGroup": {
+      "type": "string",
+      "defaultValue": "NE-NWK-001-RG",
+      "metadata": {
+        "description": "Name of the existing VNET resource group"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "UKS-EXT-001-SN",
+      "metadata": {
+        "description": "Name of the subnet in the virtual network you want to use"
+      }
+    },
+        "dnsNameForPublicIP": {
+          "type": "string",
+          "defaultValue": "bdev4",
+          "metadata": {
+            "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
+          }
+        }
+      },
+  "variables": {
+    "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'sawinvm')]",
+    "publicIPAddressType": "Dynamic",
+    "vnetID": "[resourceId(parameters('existingVirtualNetworkResourceGroup'),'Microsoft.Network/virtualNetworks/', parameters('existingVirtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/', parameters('subnetName'))]",
+    "nicName": "[concat(parameters('vmName'),'-01','-Nic')]",
+    "publicIPAddressName": "[parameters('dnsNameForPublicIP')]"
+  },
+      "resources": [
+        {
+          "type": "Microsoft.Storage/storageAccounts",
+          "name": "[variables('storageAccountName')]",
+          "apiVersion": "2016-01-01",
+          "location": "[parameters('location')]",
+          "sku": {
+            "name": "Standard_LRS"
+          },
+          "kind": "Storage",
+          "properties": {}
+        },
+        {
+          "apiVersion": "2016-03-30",
+          "type": "Microsoft.Network/publicIPAddresses",
+          "name": "[variables('publicIPAddressName')]",
+          "location": "[Parameters('location')]",
+          "properties": {
+            "publicIPAllocationMethod": "Dynamic",
+            "dnsSettings": {
+              "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+            }
+          }
+        },
+        {
+          "apiVersion": "2016-03-30",
+          "type": "Microsoft.Network/networkInterfaces",
+          "name": "[variables('nicName')]",
+          "location": "[Parameters('location')]",
+          "properties": {
+            "ipConfigurations": [
+              {
+                "name": "ipconfig1",
+                "properties": {
+                  "privateIPAllocationMethod": "Dynamic",
+                  "publicIPAddress": {
+                    "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+                  },
+                  "subnet": {
+                    "id": "[variables('subnetRef')]"
+                  },
+                  "dependsOn": [
+                    "[variables('subnetRef')]"
+                ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "2017-03-30",
+          "type": "Microsoft.Compute/virtualMachines",
+          "name": "[parameters('vmName')]",
+          "location": "[Parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+            "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+          ],
+          "properties": {
+            "hardwareProfile": {
+              "vmSize": "Standard_A2"
+            },
+            "osProfile": {
+              "computerName": "[parameters('vmName')]",
+              "adminUsername": "[parameters('adminUsername')]",
+              "adminPassword": "[parameters('adminPassword')]"
+            },
+            "storageProfile": {
+              "imageReference": {
+                "publisher": "canonical",
+                "offer": "UbuntuServer",
+                "sku": "[parameters('OSVersion')]",
+                "version": "latest"
+              },
+              "osDisk": {
+                "createOption": "FromImage"
+              },
+              "dataDisks": [
+                {
+                  "diskSizeGB": 1023,
+                  "lun": 0,
+                  "createOption": "Empty"
+                }
+              ]
+            },
+            "networkProfile": {
+              "networkInterfaces": [
+                {
+                  "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
+                }
+              ]
+            },
+            "diagnosticsProfile": {
+              "bootDiagnostics": {
+                "enabled": true,
+                "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))).primaryEndpoints.blob]"
+              }
+            }
+          }
+        }
+      ],
+      "outputs": {
+        "hostname": {
+          "type": "string",
+          "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]"
+        }
+      }
+    }
