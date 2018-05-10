@@ -6,7 +6,7 @@
       "type": "string",
       "defaultValue": "North Europe",
       "metadata": {
-        "description": "Please enter the location where you want to deploy this Virtual Machine"
+        "description": "Please enter the location where you want to deploy this Virtual Machine."
       }
     },
     "vmName": {
