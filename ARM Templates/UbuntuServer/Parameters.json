@@ -13,7 +13,7 @@
         "keyVault": {
           "id": ""
         },
-        "secretName": "benserveradmin"
+        "secretName": ""
       }
     } }
   }
