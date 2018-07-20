@@ -11,7 +11,7 @@
     "adminPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/fd77ecf8-6e4e-4526-a16c-41532d5fe8c1/resourceGroups/benlabrg798209/providers/Microsoft.KeyVault/vaults/BenLab2483"
+          "id": ""
         },
         "secretName": "benserveradmin"
       }
